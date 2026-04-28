@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中餐外卖 AI 接单系统 Demo</title>
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #111827;
+      --green: #16a34a;
+      --orange: #f59e0b;
+      --red: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 22px 24px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 26px rgba(0,0,0,0.04);
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    textarea, input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 15px;
+      outline: none;
+      background: white;
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-orange { background: var(--orange); color: white; }
+    .btn-light { background: #f3f4f6; color: var(--text); border: 1px solid var(--line); }
+    .btn-red { background: var(--red); color: white; }
+
+    .examples {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .example {
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .example:hover { background: #f3f4f6; }
+
+    .chat {
+      height: 260px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fbfbfc;
+      margin-top: 10px;
+    }
+
+    .msg {
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      max-width: 90%;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .user {
+      background: #e5e7eb;
+      margin-left: auto;
+    }
+
+    .ai {
+      background: #111827;
+      color: white;
+    }
+
+    .order-preview {
+      border: 1px dashed #cbd5e1;
+      border-radius: 14px;
+      padding: 14px;
+      background: #fafafa;
+      margin-top: 12px;
+    }
+
+    .item {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 0;
+    }
+
+    .item:last-child { border-bottom: 0; }
+
+    .item-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+    }
+
+    .mods {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: 800;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 2px solid var(--line);
+    }
+
+    .orders {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .order-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 13px;
+      background: white;
+    }
+
+    .order-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #ecfdf5;
+      color: #15803d;
+    }
+
+    .status {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 520px) {
+      .menu-grid { grid-template-columns: 1fr; }
+    }
+
+    .menu-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fafafa;
+      font-size: 13px;
+    }
+
+    .menu-item b { display: block; margin-bottom: 4px; }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 18px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🥡 中餐外卖 AI 接单系统 Demo</h1>
+    <p>模拟电话接单：客户说中文 / 英文 / 中英混合，系统解析订单、复述确认，并进入厨房后台。</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>📞 模拟客户电话</h2>
+      <div class="hint">
+        这是前端 Demo，不需要后端和 API。真实版本可接入 Twilio 电话、AI 语音识别、OpenAI、短信或打印机。
+      </div>
+
+      <textarea id="customerInput" placeholder="例如：我要一个宫保鸡丁，不要花生，少辣，再来一份蛋炒饭和两个春卷，名字是王先生，15分钟后自取。"></textarea>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="handleCall()">AI 接单解析</button>
+        <button class="btn-light" onclick="clearInput()">清空</button>
+      </div>
+
+      <div class="examples">
+        <div class="example" onclick="fillExample(this)">我要一个宫保鸡丁，不要花生，少辣，再来一份蛋炒饭和两个春卷，名字是王先生，15分钟后自取。</div>
+        <div class="example" onclick="fillExample(this)">Hi, can I get orange chicken combo with fried rice, no broccoli, and one wonton soup? Pickup under David.</div>
+        <div class="example" onclick="fillExample(this)">我要左宗棠鸡 combo，side 要炒饭，加一个hot and sour soup，不要太辣，电话 626-888-1234。</div>
+      </div>
+
+      <h2 style="margin-top:18px;">🤖 AI 对话记录</h2>
+      <div class="chat" id="chatBox">
+        <div class="msg ai">您好，这里是 Dragon Wok AI 接单员。请问您想点什么？</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>✅ 订单确认</h2>
+      <div class="hint">
+        AI 会先复述订单。确认后，订单会进入右侧/下方的“厨房订单后台”。
+      </div>
+
+      <div id="orderPreview" class="order-preview">
+        <div class="small">还没有订单。请先输入客户点餐内容。</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-green" onclick="confirmOrder()">确认下单</button>
+        <button class="btn-orange" onclick="askCorrection()">要求客户补充/修改</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🍜 当前菜单模板</h2>
+      <div class="hint">Demo 内置了一个小型中餐菜单。真实产品里，每家店都可以上传自己的菜单。</div>
+      <div class="menu-grid" id="menuGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2>👨‍🍳 厨房订单后台</h2>
+      <div class="hint">确认后的订单会出现在这里。真实版本可以打印、短信提醒、或对接 POS。</div>
+      <div id="orders" class="orders">
+        <div class="small">暂无订单。</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer-note">
+    Demo 版本：规则解析 + 模拟 AI 流程。适合用来给餐厅老板展示“AI 接电话不漏单”的核心价值。
+  </div>
+
+  <script>
+    const menu = [
+      { id: "kung_pao_chicken", cn: "宫保鸡丁", en: "Kung Pao Chicken", price: 13.99, keywords: ["宫保鸡丁", "kung pao", "gong bao"] },
+      { id: "orange_chicken", cn: "陈皮鸡 / 橙鸡", en: "Orange Chicken", price: 12.99, keywords: ["橙鸡", "陈皮鸡", "orange chicken"] },
+      { id: "general_tso", cn: "左宗棠鸡", en: "General Tso's Chicken", price: 13.99, keywords: ["左宗棠鸡", "general tso"] },
+      { id: "egg_fried_rice", cn: "蛋炒饭", en: "Egg Fried Rice", price: 9.99, keywords: ["蛋炒饭", "egg fried rice"] },
+      { id: "spring_roll", cn: "春卷", en: "Spring Roll", price: 2.50, keywords: ["春卷", "spring roll"] },
+      { id: "wonton_soup", cn: "云吞汤", en: "Wonton Soup", price: 6.99, keywords: ["云吞汤", "wonton soup"] },
+      { id: "hot_sour_soup", cn: "酸辣汤", en: "Hot & Sour Soup", price: 6.99, keywords: ["酸辣汤", "hot and sour", "hot & sour"] },
+      { id: "combo", cn: "套餐", en: "Combo", price: 3.00, keywords: ["combo", "套餐"] }
+    ];
+
+    let currentOrder = null;
+    let orderCount = 0;
+
+    function money(n) {
+      return "$" + n.toFixed(2);
+    }
+
+    function renderMenu() {
+      const grid = document.getElementById("menuGrid");
+      grid.innerHTML = menu.map(item => `
+        <div class="menu-item">
+          <b>${item.cn}</b>
+          <span>${item.en}</span><br />
+          <span class="small">${money(item.price)}</span>
+        </div>
+      `).join("");
+    }
+
+    function fillExample(el) {
+      document.getElementById("customerInput").value = el.textContent;
+    }
+
+    function clearInput() {
+      document.getElementById("customerInput").value = "";
+    }
+
+    function addMsg(type, text) {
+      const chat = document.getElementById("chatBox");
+      const div = document.createElement("div");
+      div.className = "msg " + type;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function detectQuantity(text, keywordIndex) {
+      const before = text.slice(Math.max(0, keywordIndex - 8), keywordIndex).toLowerCase();
+      if (before.includes("两个") || before.includes("2") || before.includes("two")) return 2;
+      if (before.includes("三个") || before.includes("3") || before.includes("three")) return 3;
+      if (before.includes("四个") || before.includes("4") || before.includes("four")) return 4;
+      return 1;
+    }
+
+    function parseOrder(text) {
+      const lower = text.toLowerCase();
+      const items = [];
+
+      menu.forEach(m => {
+        let foundIndex = -1;
+        for (const kw of m.keywords) {
+          const idx = lower.indexOf(kw.toLowerCase());
+          if (idx >= 0) {
+            foundIndex = idx;
+            break;
+          }
+        }
+
+        if (foundIndex >= 0 && m.id !== "combo") {
+          const qty = detectQuantity(text, foundIndex);
+          const modifiers = [];
+
+          if (lower.includes("不要花生") || lower.includes("no peanuts")) modifiers.push("不要花生 / no peanuts");
+          if (lower.includes("少辣") || lower.includes("not too spicy") || lower.includes("less spicy")) modifiers.push("少辣 / less spicy");
+          if (lower.includes("不要太辣")) modifiers.push("不要太辣 / not too spicy");
+          if (lower.includes("不要西兰花") || lower.includes("no broccoli")) modifiers.push("不要西兰花 / no broccoli");
+          if (lower.includes("炒饭") || lower.includes("fried rice")) {
+            if (m.id === "general_tso" || m.id === "orange_chicken" || m.id === "kung_pao_chicken") {
+              modifiers.push("配炒饭 / side fried rice");
+            }
+          }
+
+          items.push({
+            id: m.id,
+            name: m.en,
+            cn: m.cn,
+            qty,
+            price: m.price,
+            modifiers
+          });
+        }
+      });
+
+      const isCombo = lower.includes("combo") || lower.includes("套餐");
+      if (isCombo && items.length > 0) {
+        items[0].modifiers.push("套餐 / combo");
+        items[0].price += 3.00;
+      }
+
+      const customerName = extractName(text);
+      const phone = extractPhone(text);
+      const pickupTime = lower.includes("15分钟") || lower.includes("15 min") ? "15分钟后自取" : "尽快自取 / ASAP pickup";
+
+      return { items, customerName, phone, pickupTime };
+    }
+
+    function extractName(text) {
+      const patterns = [
+        /名字是([\u4e00-\u9fa5A-Za-z\s]+)/,
+        /name is ([A-Za-z\s]+)/i,
+        /under ([A-Za-z\s]+)/i,
+        /名字 ([\u4e00-\u9fa5A-Za-z\s]+)/
+      ];
+
+      for (const p of patterns) {
+        const m = text.match(p);
+        if (m && m[1]) return m[1].trim().replace(/[，。,.].*$/, "");
+      }
+      return "未提供";
+    }
+
+    function extractPhone(text) {
+      const m = text.match(/(\d{3}[-\s]?\d{3}[-\s]?\d{4})/);
+      return m ? m[1] : "未提供";
+    }
+
+    function handleCall() {
+      const text = document.getElementById("customerInput").value.trim();
+      if (!text) {
+        alert("请先输入客户点餐内容。");
+        return;
+      }
+
+      addMsg("user", text);
+      const parsed = parseOrder(text);
+      currentOrder = parsed;
+
+      if (parsed.items.length === 0) {
+        addMsg("ai", "不好意思，我没有听清楚您要点哪些菜。可以再说一遍菜名吗？");
+      } else {
+        const summary = buildSummary(parsed);
+        addMsg("ai", "我帮您确认一下：" + summary + "。请问这样对吗？");
+      }
+
+      renderPreview();
+    }
+
+    function buildSummary(order) {
+      if (!order || order.items.length === 0) return "暂无菜品";
+      const itemText = order.items.map(i => {
+        const mods = i.modifiers.length ? "（" + i.modifiers.join("，") + "）" : "";
+        return `${i.qty}份 ${i.cn} / ${i.name}${mods}`;
+      }).join("，");
+      return `${itemText}。姓名：${order.customerName}。电话：${order.phone}。取餐：${order.pickupTime}`;
+    }
+
+    function calculateTotal(order) {
+      const subtotal = order.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+      const tax = subtotal * 0.095;
+      return { subtotal, tax, total: subtotal + tax };
+    }
+
+    function renderPreview() {
+      const box = document.getElementById("orderPreview");
+
+      if (!currentOrder || currentOrder.items.length === 0) {
+        box.innerHTML = `<div class="small">未识别到有效菜品。请让客户重复菜名。</div>`;
+        return;
+      }
+
+      const totals = calculateTotal(currentOrder);
+      box.innerHTML = `
+        ${currentOrder.items.map(i => `
+          <div class="item">
+            <div class="item-title">
+              <span>${i.qty} × ${i.cn}<br><span class="small">${i.name}</span></span>
+              <span>${money(i.price * i.qty)}</span>
+            </div>
+            ${i.modifiers.length ? `<div class="mods">${i.modifiers.join(" · ")}</div>` : ""}
+          </div>
+        `).join("")}
+
+        <div class="small" style="margin-top:10px;">
+          客户：${currentOrder.customerName} ｜ 电话：${currentOrder.phone} ｜ 取餐：${currentOrder.pickupTime}
+        </div>
+
+        <div class="total">
+          <span>合计含税</span>
+          <span>${money(totals.total)}</span>
+        </div>
+      `;
+    }
+
+    function confirmOrder() {
+      if (!currentOrder || currentOrder.items.length === 0) {
+        alert("还没有可以确认的订单。");
+        return;
+      }
+
+      orderCount += 1;
+      const totals = calculateTotal(currentOrder);
+      const order = {
+        ...currentOrder,
+        id: String(orderCount).padStart(3, "0"),
+        total: totals.total,
+        time: new Date().toLocaleTimeString()
+      };
+
+      addOrderToKitchen(order);
+      addMsg("ai", `好的，您的订单已经确认。订单号 #${order.id}，预计 ${order.pickupTime}。谢谢！`);
+
+      currentOrder = null;
+      document.getElementById("customerInput").value = "";
+      document.getElementById("orderPreview").innerHTML = `<div class="small">订单已进入厨房后台。可以继续接下一通电话。</div>`;
+    }
+
+    function askCorrection() {
+      addMsg("ai", "好的，请问您要修改哪一道菜，或者需要补充姓名、电话、取餐时间？");
+    }
+
+    function addOrderToKitchen(order) {
+      const list = document.getElementById("orders");
+      if (orderCount === 1) list.innerHTML = "";
+
+      const div = document.createElement("div");
+      div.className = "order-card";
+      div.innerHTML = `
+        <div class="order-top">
+          <b>订单 #${order.id}</b>
+          <span class="badge">新订单</span>
+        </div>
+        <div class="small">${order.time} ｜ ${order.customerName} ｜ ${order.phone} ｜ ${order.pickupTime}</div>
+        ${order.items.map(i => `
+          <div class="item">
+            <div class="item-title">
+              <span>${i.qty} × ${i.cn}</span>
+              <span>${money(i.price * i.qty)}</span>
+            </div>
+            ${i.modifiers.length ? `<div class="mods">${i.modifiers.join(" · ")}</div>` : ""}
+          </div>
+        `).join("")}
+        <div class="total">
+          <span>Total</span>
+          <span>${money(order.total)}</span>
+        </div>
+        <div class="status">
+          <button class="btn-light" onclick="this.parentElement.previousElementSibling.previousElementSibling.textContent='制作中'">制作中</button>
+          <button class="btn-green" onclick="this.closest('.order-card').querySelector('.badge').textContent='已完成'">完成</button>
+        </div>
+      `;
+      list.prepend(div);
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
